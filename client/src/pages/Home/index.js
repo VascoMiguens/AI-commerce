@@ -131,70 +131,43 @@ const Home = () => {
         <div className="left-section">
           <h2 className="search-h">Search for the art you want to see!</h2>
           <div className="search-section">
-            <input className="inputSearch" type="text" onChange={onInputChange} placeholder="Search" />
+            <input
+              className="inputSearch"
+              type="text"
+              onChange={onInputChange}
+              placeholder="Search"
+            />
             <button className="searchButton" onClick={onButtonSubmit}>
               <FaSearch className="w-6 h-6 text-gray-400 search-icon" />
             </button>
           </div>
           <div className="searchedImage">
-          {imageUrl && <img src={imageUrl} alt={artName} />}
-          {artName && (
-            <>
-              <p>{artName}</p>
-              <p>Price: ${price}</p>
-            </>
-          )}
+            {imageUrl && <img src={imageUrl} alt={artName} />}
+            {artName && (
+              <>
+                <p>{artName}</p>
+                <p>Price: ${price}</p>
+              </>
+            )}
           </div>
           <div className="cartButton">
-          <button className="cartButton" onClick={onAddToCart}>Add to Cart</button>
+            <button className="cartButton" onClick={onAddToCart}>
+              Add to Cart
+            </button>
           </div>
         </div>
         <div className="right-section">
           <h2 className="right-h">Your Recent Artwork!</h2>
-        <div className="recent-img">
-        {userData?.recentArt?.map((art, index) => (
-          <ProductCard
-            key={art.productName}
-            {...art}
-            onAddToCart={() => onAddToCart(art)}
-          />
-        ))}
+          <div className="recent-img">
+            {userData?.recentArt?.map((art, index) => (
+              <ProductCard
+                key={art.productName}
+                {...art}
+                onAddToCart={() => onAddToCart(art)}
+              />
+            ))}
+          </div>
         </div>
-        </div>
-      </div>
-
-      <div>
-        <h3 className="carousel-h">Browse Arty Intelligence's Maskarade Masterpieces!</h3>
-      </div>
-    <div className="carousel-container">
-      <Carousel
-      showStatus={false}
-      showArrows={true}
-      showThumbs={false}
-      infiniteLoop={true}
-      showIndicators={false}
-      slidesToShow={3}>
-
-          <div className="carousel">
-            <img className="carousel-img" src="../assets/images/4.webp" />
-            <div className="legend-section">
-            <p className="price">{artName}${price}</p>
-            <button className="cartButton" onClick={onAddToCart}>Add to Cart</button>
-            </div>
-          </div>
-          <div className="carousel">
-            <img className="carousel-img" src="../assets/images/5.webp" />
-            <p className="price">{artName}${price}</p>
-            <button className="cartButton" onClick={onAddToCart}>Add to Cart</button>
-          </div>
-          <div className="carousel">
-            <img className="carousel-img" src="../assets/images/6.webp" />
-            <p className="price">{artName}${price}</p>
-            <button className="cartButton" onClick={onAddToCart}>Add to Cart</button>
-          </div>
-        </Carousel>
-        <br /> {/* Add a page break here */}
-        <GalleryGrid />
       </div>
 
       <div className="w-25 border m-2 p-5">

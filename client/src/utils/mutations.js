@@ -83,3 +83,16 @@ export const REMOVE_FAVOURITE = gql`
     }
   }
 `;
+
+export const CREATE_ART = gql`
+  mutation CreateProduct($inputText: String!, $price: Int!) {
+    createProduct(inputText: $inputText, price: $price) {
+      _id
+      productName
+      imageUrl
+      price
+      labels
+      webEntities
+    }
+  }
+`;

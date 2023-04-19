@@ -2,6 +2,32 @@ require("dotenv").config();
 const { AuthenticationError } = require("apollo-server-express");
 const { User, Product, Order, Favourite } = require("../models");
 const { signToken } = require("../utils/auth");
+const axios = require("axios");
+const { Storage } = require("@google-cloud/storage");
+// const storage = new Storage({
+//   keyFilename: "../keyfile.json",
+// });
+const storage = new Storage({
+  projectId: process.env.GCS_PROJECT_ID,
+  credentials: {
+    client_email: process.env.GCS_CLIENT_EMAIL,
+    private_key: process.env.GCS_PRIVATE_KEY,
+  },
+});
+const { ImageAnnotatorClient } = require("@google-cloud/vision");
+
+const client = new ImageAnnotatorClient({
+  credentials: {
+    client_email: process.env.GCS_CLIENT_EMAIL,
+    private_key: process.env.GCS_PRIVATE_KEY,
+  },
+});
+
+// const client = new ImageAnnotatorClient({
+//   keyFilename: "../keyfile.json",
+// });
+
+const { v4: uuidv4 } = require("uuid");
 
 const stripe = require("stripe")(process.env.PRIVATE_API_KEY);
 
@@ -289,6 +315,116 @@ const resolvers = {
       } catch (err) {
         console.error(err);
         throw new Error("Failed to remove favorite product");
+      }
+    },
+    createProduct: async (parent, { inputText, price }, context) => {
+      try {
+        const text = inputText;
+
+        // create a new image based on the user's input
+        const response = await axios.post(
+          "https://api.openai.com/v1/images/generations",
+          {
+            model: "image-alpha-001",
+            prompt: `generate an image of ${text}`,
+            num_images: 1,
+            size: "1024x1024",
+            response_format: "url",
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+            },
+          }
+        );
+
+        const imageUrl = response.data.data[0].url;
+        // image extension
+        const extension = ".jpg";
+        //create a unique id for the image
+        const uniqueId = uuidv4();
+        //create a timestamp for the image
+        const timestamp = Date.now();
+        // create a file name for the image
+        const fileName = `${timestamp}-${uniqueId}${extension}`;
+        // google cloud storage bucket name
+        const bucketName = process.env.GCLOUD_STORAGE_BUCKET;
+        // create a new file in the bucket
+        const file = storage.bucket(bucketName).file(fileName);
+
+        console.log(fileName);
+
+        // fetch image data from the specified URL and store it in a stream
+        const responseBucket = await axios.get(imageUrl, {
+          responseType: "stream",
+        });
+
+        // create a writable stream for the image file with content type set to JPEG
+        const writeStream = file.createWriteStream({
+          contentType: "image/jpeg",
+        });
+
+        // pipe the data stream from the response to the write stream, and wait for it to finish
+        await new Promise((resolve, reject) => {
+          responseBucket.data.pipe(writeStream);
+          writeStream.on("finish", resolve);
+          writeStream.on("error", reject);
+        });
+
+        // call google cloud vision API to detect labels in the image
+        // then sort the labels by score and extract only their description
+        const [result] = await client.labelDetection(imageUrl);
+        const labels = result.labelAnnotations
+          ? result.labelAnnotations
+              .sort((a, b) => b.score - a.score)
+              .map((label) => label.description)
+          : [];
+
+        console.log(labels);
+
+        // Call the Google Cloud Vision API to detect webentities in the image at imageUrl
+        // Then sort the webentities by score and extract only their description
+        const [result2] = await client.webDetection(imageUrl);
+        const webEntities = result2.webDetection.webEntities
+          ? 
+            result2.webDetection.webEntities
+              .sort((a, b) => b.score - a.score)
+              .map((webEntity) => webEntity.description)
+          : [];
+
+        console.log(webEntities);
+
+        // get the signed url from google cloud storage
+        const [publicUrl] = await file.getSignedUrl({
+          action: "read",
+          expires: "03-17-2025",
+        });
+
+        console.log(publicUrl);
+
+        // create a new product
+        const product = await Product.create({
+          productName: fileName,
+          imageUrl: publicUrl,
+          price: price,
+          labels: labels,
+          webEntities: webEntities,
+        });
+
+        // add the product to the user's recentArt array if the user is logged in
+        if (context.user) {
+          await User.findOneAndUpdate(
+            { _id: context.user._id },
+            { $addToSet: { recentArt: product._id } },
+            { new: true }
+          ).populate("recentArt.product");
+        }
+
+        return product;
+      } catch (err) {
+        console.error(err);
+        throw new Error("Failed to get images");
       }
     },
   },

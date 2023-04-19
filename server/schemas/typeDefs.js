@@ -16,6 +16,8 @@ const typeDefs = gql`
     productName: String
     imageUrl: String
     price: Int
+    labels: [String]
+    webEntities: [String]
   }
 
   type Order {
@@ -69,6 +71,7 @@ const typeDefs = gql`
     addProduct(productName: String!, imageUrl: String!, price: Int): Product!
     addFavourite(productName: String!): User!
     removeFavourite(productName: String!): User!
+    createProduct(inputText: String!, price: Int!): Product!
   }
 `;
 

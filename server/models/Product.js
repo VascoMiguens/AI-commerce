@@ -4,18 +4,22 @@ const dateFormat = require("../utils/dateFormat");
 const productSchema = new Schema({
   productName: {
     type: String,
-    required: "The Product title is required",
-    minlength: 1,
-    maxlength: 280,
-    trim: true,
+    required: true,
   },
   imageUrl: {
     type: String,
     required: true,
-    trim: true,
   },
   price: {
     type: Number,
+    required: true,
+  },
+  labels: {
+    type: [String],
+    required: true,
+  },
+  webEntities: {
+    type: [String],
     required: true,
   },
   createdAt: {

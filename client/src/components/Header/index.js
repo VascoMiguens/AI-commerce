@@ -53,7 +53,7 @@ const Header = () => {
               >
                 {Auth.getProfile().data.username}
               </Link>
-              <button className="text-sm m-2" onClick={logout}>
+              <button className="btn text-sm m-2" onClick={logout}>
                 Logout
               </button>
             </>

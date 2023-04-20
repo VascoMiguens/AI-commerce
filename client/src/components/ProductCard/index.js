@@ -1,10 +1,12 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 import { QUERY_USER_FAVOURITES } from "../../utils/queries";
 import { ADD_FAVOURITE, REMOVE_FAVOURITE } from "../../utils/mutations";
 import { useQuery, useMutation } from "@apollo/client";
+import "./productCard.css";
 
 const ProductCard = (props) => {
+  const location = useLocation();
   const { productName, imageUrl, price, _id, onAddToCart } = props;
   //query user's favourites by the product name
   const { data } = useQuery(QUERY_USER_FAVOURITES, {
@@ -36,26 +38,54 @@ const ProductCard = (props) => {
   };
 
   return (
-    <div className="border p-5 m-2 flex">
-      <div>
-        <img
-          src={`${imageUrl}`}
-          alt={productName}
-          className="product-image p-5"
-        />
-      </div>
-      <div className="product-details">
-        <Link to={`/product/${_id}`}>{productName}</Link>
-        <div className="product-price">
-          <p className="text-lg mr-5">£{price}</p>
-          <button className="btn btn-primary" onClick={onAddToCart}>
-            Add to Cart
-          </button>
-          <button className="btn btn-primary" onClick={handleToggleFavourite}>
-            {isFavourite ? <FaHeart /> : <FaRegHeart />}
-          </button>
+    <div>
+      {location.pathname === "/" || location.pathname === "/basket" ? (
+        <div className="border-home">
+          <div className="product-details">
+            <div className="product-price"></div>
+            <button className="btn-favourite" onClick={handleToggleFavourite}>
+              {isFavourite ? <FaHeart /> : <FaRegHeart />}
+            </button>
+          </div>
+          <div className="recent">
+            <Link to={`/product/${_id}`}>
+              <img
+                src={`${imageUrl}`}
+                alt={productName}
+                className="product-image-recent"
+              />
+            </Link>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="border-product">
+          <div className="product">
+            <img
+              src={`${imageUrl}`}
+              alt={productName}
+              className="product-image p-5"
+            />
+          </div>
+          <div className="product-details">
+            <div className="product-price-pr ml-5">
+              <p className="text-lg mr-5">£{price}</p>
+              <div className="product-buttons">
+                {location.pathname !== "/" && (
+                  <button className="btn" onClick={onAddToCart}>
+                    Add to Cart
+                  </button>
+                )}
+                <button
+                  className="btn-favourite"
+                  onClick={handleToggleFavourite}
+                >
+                  {isFavourite ? <FaHeart /> : <FaRegHeart />}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

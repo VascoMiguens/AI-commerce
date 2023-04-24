@@ -24,6 +24,7 @@ import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import Checkout from "./pages/Checkout";
 import auth from "./utils/auth";
+import { AnimatePresence } from "framer-motion";
 
 // Construct our main GraphQL API endpoint
 const httpLink = createHttpLink({
@@ -63,29 +64,31 @@ function App() {
       <Elements stripe={stripePromise}>
         <CartProvider>
           <Router>
-            <Layout>
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route
-                  path="/login"
-                  element={<Login setIsLogged={setIsLogged} />}
-                />
-                <Route path="/signup" element={<Login />} />
-                <Route path="/basket" element={<Basket />} />
-                <Route path="/profiles/:username" element={<Profile />} />
-                <Route path="/product/:productId" element={<Product />} />
-                <Route
-                  path="/checkout"
-                  element={
-                    isLogged ? (
-                      <Checkout />
-                    ) : (
-                      <Navigate to="/login" state={{ from: "/checkout" }} />
-                    )
-                  }
-                />
-              </Routes>
-            </Layout>
+            <AnimatePresence initial={false}>
+              <Layout>
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route
+                    path="/login"
+                    element={<Login setIsLogged={setIsLogged} />}
+                  />
+                  <Route path="/signup" element={<Login />} />
+                  <Route path="/basket" element={<Basket />} />
+                  <Route path="/profiles/:username" element={<Profile />} />
+                  <Route path="/product/:productId" element={<Product />} />
+                  <Route
+                    path="/checkout"
+                    element={
+                      isLogged ? (
+                        <Checkout />
+                      ) : (
+                        <Navigate to="/login" state={{ from: "/checkout" }} />
+                      )
+                    }
+                  />
+                </Routes>
+              </Layout>
+            </AnimatePresence>
           </Router>
         </CartProvider>
       </Elements>

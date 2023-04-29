@@ -63,12 +63,9 @@ export const SAVE_PRODUCT = gql`
 `;
 
 export const ADD_FAVOURITE = gql`
-  mutation Mutation($productName: String!) {
+  mutation AddFavourite($productName: String!) {
     addFavourite(productName: $productName) {
       _id
-      favourites {
-        _id
-      }
     }
   }
 `;
@@ -77,9 +74,6 @@ export const REMOVE_FAVOURITE = gql`
   mutation RemoveFavourite($productName: String!) {
     removeFavourite(productName: $productName) {
       _id
-      favourites {
-        _id
-      }
     }
   }
 `;

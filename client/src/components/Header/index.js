@@ -66,7 +66,7 @@ const Header = () => {
             </button>
           </>
         ) : (
-          <>
+          <div className="login-section">
             <Link className="m-2 text-sm" to="/login">
               Login
             </Link>
@@ -74,7 +74,7 @@ const Header = () => {
             <Link className="m-2 text-sm" to="/login">
               Signup
             </Link>
-          </>
+          </div>
         )}
       </div>
     </div>

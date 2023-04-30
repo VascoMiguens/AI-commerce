@@ -33,7 +33,7 @@ export default function CartProvider({ children }) {
   // Remove cart items from local state and local storage
   const onRemoveFromCart = (item) => {
     console.log("Remove from the Cart");
-    setCartItems(cartItems.filter((cartItem) => cartItem.title !== item.title));
+    setCartItems(cartItems.filter((cartItem) => cartItem._id !== item._id));
   };
 
   return (

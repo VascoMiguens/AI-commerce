@@ -7,39 +7,38 @@ import { QUERY_SINGLE_PRODUCT } from "../../utils/queries";
 
 // Shopping Cart
 import { useCart } from "../../context/CartContext";
+import "./product.css";
+import PageTransition from "../../components/PageTransition";
 
 const Product = () => {
   const { onAddToCart } = useCart();
 
-  const params = useParams();
   const { productId } = useParams();
 
-  console.log("params: ", params);
-
-  const { loading, data } = useQuery(QUERY_SINGLE_PRODUCT, {
+  const { data } = useQuery(QUERY_SINGLE_PRODUCT, {
     // pass URL parameter
     variables: { productId: productId },
   });
 
   const product = data?.product || {};
-  console.log(product);
-  const productName = loading
-    ? "Loading Product..."
-    : data?.product.productName;
-  console.log(`Product: products = ${data}`);
 
   return (
     <>
-      <div className="p-5 m-2 border w-75">
-        <h1>{productName}</h1>
-        <div className="section-title">
-          <ProductCard
-            key={product.productName}
-            {...product}
-            onAddToCart={() => onAddToCart(product)}
-          />
+      <PageTransition>
+        <div className="product-container p-5 m-2 border w-75">
+          <div className="section-title">
+            <ProductCard
+              key={product.productName}
+              _id={product._id}
+              imageUrl={product.imageUrl}
+              price={product.price}
+              productName={product.productName}
+              labels={product.labels}
+              onAddToCart={() => onAddToCart(product)}
+            />
+          </div>
         </div>
-      </div>
+      </PageTransition>
     </>
   );
 };

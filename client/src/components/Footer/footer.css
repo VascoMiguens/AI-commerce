@@ -4,6 +4,7 @@
   border-top-color: var(--dark);
   border-top-style: solid;
   padding: 5px;
+  width: 90vw;
 }
 
 .social-media-list {

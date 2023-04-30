@@ -25,6 +25,7 @@
     "react-responsive-carousel": "^3.2.23",
     "react-router-dom": "^6.2.1",
     "react-scripts": "4.0.1",
+    "swiper": "^9.2.4",
     "web-vitals": "^0.2.4"
   },
   "scripts": {

@@ -1,10 +1,11 @@
 import "./fullpageloader.css";
 import Brush from "../../assets/brush.png";
 
-const FullPageLoader = () => {
+const FullPageLoader = ({ loaded }) => {
+  const containerClasses = `animation-container${loaded ? " loaded" : ""}`;
   return (
-    <div className="full-page-loader">
-      <div className="animation-container">
+    <div className={`full-page-loader${loaded ? " loaded" : ""}`}>
+      <div className={containerClasses}>
         <div className="animation-title">Finding Inspiration</div>
         <img src={Brush} alt="brush" className="brush" />
         <div className="line"></div>

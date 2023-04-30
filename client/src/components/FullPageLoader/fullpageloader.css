@@ -8,6 +8,12 @@
   height: 100vh;
   background-color: black;
   z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.full-page-loader.loaded {
+  opacity: 1;
 }
 
 .animation-container {
@@ -20,6 +26,12 @@
   height: 20vh;
   margin: 0;
   z-index: 1001;
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.animation-container.loaded {
+  opacity: 1;
 }
 
 .animation-title {

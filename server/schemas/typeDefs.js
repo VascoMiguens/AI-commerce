@@ -21,12 +21,22 @@ const typeDefs = gql`
   }
 
   type Order {
-    _id: ID
-    customerName: String
-    customerAddress: String
-    total: Int
-    items: [Product]!
-    createdAt: String
+    _id: ID!
+    customerName: String!
+    customerAddress: String!
+    total: Int!
+    items: [OrderItem!]!
+    createdAt: String!
+  }
+
+  type OrderItem {
+    product: Product!
+    quantity: Int!
+  }
+
+  input OrderItemInput {
+    product: ID!
+    quantity: Int!
   }
 
   type Auth {
@@ -63,9 +73,9 @@ const typeDefs = gql`
     newOrder(
       customerName: String!
       customerAddress: String!
-      items: String!
       total: Int!
-    ): Order
+      items: [OrderItemInput!]!
+    ): Order!
     checkout(amount: Int): Payment
     addRecentArt(productName: String!, imageUrl: String!, price: Int!): Product!
     addProduct(productName: String!, imageUrl: String!, price: Int): Product!

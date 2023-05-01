@@ -4,32 +4,34 @@ const { User, Product, Order, Favourite } = require("../models");
 const { signToken } = require("../utils/auth");
 const axios = require("axios");
 const { Storage } = require("@google-cloud/storage");
-// const storage = new Storage({
-//   keyFilename: "../keyfile.json",
-// });
 const storage = new Storage({
-  projectId: process.env.GCS_PROJECT_ID,
-  credentials: {
-    client_email: process.env.GCS_CLIENT_EMAIL,
-    private_key: process.env.GCS_PRIVATE_KEY,
-  },
+  keyFilename: "./keyfile.json",
 });
+// const storage = new Storage({
+//   projectId: process.env.GCS_PROJECT_ID,
+//   credentials: {
+//     client_email: process.env.GCS_CLIENT_EMAIL,
+//     private_key: process.env.GCS_PRIVATE_KEY,
+//   },
+// });
 const { ImageAnnotatorClient } = require("@google-cloud/vision");
 
-const client = new ImageAnnotatorClient({
-  credentials: {
-    client_email: process.env.GCS_CLIENT_EMAIL,
-    private_key: process.env.GCS_PRIVATE_KEY,
-  },
-});
-
 // const client = new ImageAnnotatorClient({
-//   keyFilename: "../keyfile.json",
+//   credentials: {
+//     client_email: process.env.GCS_CLIENT_EMAIL,
+//     private_key: process.env.GCS_PRIVATE_KEY,
+//   },
 // });
+
+const client = new ImageAnnotatorClient({
+  keyFilename: "./keyfile.json",
+});
 
 const { v4: uuidv4 } = require("uuid");
 
-const stripe = require("stripe")(process.env.PRIVATE_API_KEY);
+const stripe = require("stripe")(
+  process.env.REACT_APP_STRIPE_KEY
+);
 
 const resolvers = {
   Query: {
@@ -90,7 +92,7 @@ const resolvers = {
         try {
           //find a product by the product name
           const product = await Product.findOne({ productName: productName });
-          console.log(product);
+
           //find a favourite by the product _id
           const favourite = await Favourite.findOne({ productId: product._id });
           //if no faourite is found in the database return false
@@ -138,27 +140,65 @@ const resolvers = {
 
       return { token, user };
     },
-    newOrder: async (
-      parent,
-      { customerName, customerAddress, items, total },
-      context
-    ) => {
-      if (context.user) {
-        const order = await Order.create({
-          customerName,
-          customerAddress,
-          items,
-          total,
+    newOrder: async (parent, { items, successUrl, cancelUrl }) => {
+      try {
+        // Map through the items and create line items for each one
+        const lineItems = items.map((item) => ({
+          price_data: {
+            currency: "gbp",
+            product_data: {
+              name: item.productName,
+              images: [item.imageUrl],
+            },
+            unit_amount: item.price * 100,
+          },
+          quantity: item.quantity,
+        }));
+
+        const session = await stripe.checkout.sessions.create({
+          payment_method_types: ["card"],
+          shipping_address_collection: { allowed_countries: ["GB"] },
+          shipping_options: [
+            {
+              shipping_rate_data: {
+                type: "fixed_amount",
+                fixed_amount: { amount: 0, currency: "gbp" },
+                display_name: "Free shipping",
+                delivery_estimate: {
+                  minimum: { unit: "business_day", value: 5 },
+                  maximum: { unit: "business_day", value: 7 },
+                },
+              },
+            },
+            {
+              shipping_rate_data: {
+                type: "fixed_amount",
+                fixed_amount: { amount: 1500, currency: "gbp" },
+                display_name: "Next day air",
+                delivery_estimate: {
+                  minimum: { unit: "business_day", value: 1 },
+                  maximum: { unit: "business_day", value: 1 },
+                },
+              },
+            },
+          ],
+          phone_number_collection: {
+            enabled: true,
+          },
+          line_items: lineItems,
+          mode: "payment",
+          success_url: successUrl,
+          cancel_url: cancelUrl,
         });
 
-        await User.findOneAndUpdate(
-          { _id: context.user._id },
-          { $addToSet: { orders: order._id } }
-        );
-
-        return thought;
+        return {
+          id: session.id,
+          url: session.url,
+        };
+      } catch (err) {
+        console.log(err);
+        throw new Error("Failed to create payment intent");
       }
-      throw new AuthenticationError("You need to be logged in!");
     },
     checkout: async (parent, { amount }) => {
       // Other payment checks and vaalidations
@@ -334,7 +374,7 @@ const resolvers = {
           {
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+              Authorization: `Bearer ${process.env.REACT_APP_OPENAI_KEY}`,
             },
           }
         );
@@ -349,7 +389,7 @@ const resolvers = {
         // create a file name for the image
         const fileName = `${timestamp}-${uniqueId}${extension}`;
         // google cloud storage bucket name
-        const bucketName = process.env.GCLOUD_STORAGE_BUCKET;
+        const bucketName = process.env.GOOGLE_CLOUD_BUCKET;
         // create a new file in the bucket
         const file = storage.bucket(bucketName).file(fileName);
 
@@ -387,8 +427,7 @@ const resolvers = {
         // Then sort the webentities by score and extract only their description
         const [result2] = await client.webDetection(imageUrl);
         const webEntities = result2.webDetection.webEntities
-          ? 
-            result2.webDetection.webEntities
+          ? result2.webDetection.webEntities
               .sort((a, b) => b.score - a.score)
               .map((webEntity) => webEntity.description)
           : [];

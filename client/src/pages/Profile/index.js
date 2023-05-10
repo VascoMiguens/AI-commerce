@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import "./profile.css";
 import { Navigate } from "react-router-dom";
 import { useQuery } from "@apollo/client";
@@ -12,8 +12,8 @@ import PageTransition from "../../components/PageTransition";
 
 const Profile = (props) => {
   const { username: userParam } = props;
-  console.log(props);
   const { onAddToCart } = useCart();
+  const [activeTab, setActiveTab] = useState("orders");
 
   const { loading, data, refetch } = useQuery(
     userParam ? QUERY_USER : QUERY_ME,
@@ -23,7 +23,6 @@ const Profile = (props) => {
   );
 
   const user = data?.me || data?.user || {};
-  console.log(user);
 
   // navigate to personal profile page if username is yours
   if (Auth.loggedIn() && Auth.getProfile().data.username === userParam) {
@@ -45,36 +44,59 @@ const Profile = (props) => {
 
   refetch();
 
+  const renderOrders = () => (
+    <div className="section">
+      <div className="profile-container">
+        {user?.orders?.length > 0 ? (
+          <>
+            {user?.orders?.map((order, index) => (
+              <ProductCard />
+            ))}
+          </>
+        ) : (
+          <p>No Orders Yet</p>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderFavourites = () => (
+    <div className="section">
+      <div className="profile-container">
+        {user?.favourites?.map((fav, index) => (
+          <ProductCard
+            key={fav.productId._id}
+            productName={fav.productId.productName}
+            price={fav.productId.price}
+            imageUrl={fav.productId.imageUrl}
+            _id={fav.productId._id}
+            onAddToCart={() => onAddToCart(fav.productId)}
+            userName={user.username}
+          />
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <PageTransition>
       <div>
+        <div className="navbar">
+          <button
+            className={activeTab === "orders" ? "active" : ""}
+            onClick={() => setActiveTab("orders")}
+          >
+            Orders
+          </button>
+          <button
+            className={activeTab === "favourites" ? "active" : ""}
+            onClick={() => setActiveTab("favourites")}
+          >
+            Favourites
+          </button>
+        </div>
         <div className="profile">
-          <h2>{user.username}</h2>
-          <div style={{ border: "1px dotted #1a1a1a" }}></div>
-          <div className="section">
-            <h1>Recent Orders</h1>
-            <div className="profile-container">
-              {user?.orders?.map((order, index) => (
-                <ProductCard />
-              ))}
-            </div>
-          </div>
-          <div className="section">
-            <h1>Favourites</h1>
-            <div className="profile-container">
-              {user?.favourites?.map((fav, index) => (
-                <ProductCard
-                  key={fav.productId._id}
-                  productName={fav.productId.productName}
-                  price={fav.productId.price}
-                  imageUrl={fav.productId.imageUrl}
-                  _id={fav.productId._id}
-                  onAddToCart={() => onAddToCart(fav.productId)}
-                  userName={user.username}
-                />
-              ))}
-            </div>
-          </div>
+          {activeTab === "orders" ? renderOrders() : renderFavourites()}
         </div>
       </div>
     </PageTransition>

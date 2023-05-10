@@ -63,24 +63,24 @@ export const SAVE_PRODUCT = gql`
 `;
 
 export const ADD_FAVOURITE = gql`
-  mutation AddFavourite($productName: String!) {
-    addFavourite(productName: $productName) {
+  mutation AddFavourite($productId: ID!) {
+    addFavourite(productID: $productId) {
       _id
     }
   }
 `;
 
 export const REMOVE_FAVOURITE = gql`
-  mutation RemoveFavourite($productName: String!) {
-    removeFavourite(productName: $productName) {
+  mutation RemoveFavourite($productId: ID!) {
+    removeFavourite(productID: $productId) {
       _id
     }
   }
 `;
 
 export const CREATE_ART = gql`
-  mutation CreateProduct($inputText: String!, $price: Int!) {
-    createProduct(inputText: $inputText, price: $price) {
+  mutation CreateProduct($artUrl: String!, $inputText: String!, $price: Int!) {
+    createProduct(artUrl: $artUrl, inputText: $inputText, price: $price) {
       _id
       productName
       imageUrl
@@ -88,5 +88,28 @@ export const CREATE_ART = gql`
       labels
       webEntities
     }
+  }
+`;
+
+export const PAYMENT_SESSION = gql`
+  mutation CreatePaymentSession(
+    $items: [CheckoutProduct!]!
+    $successUrl: String!
+    $cancelUrl: String!
+  ) {
+    createPaymentSession(
+      items: $items
+      successUrl: $successUrl
+      cancelUrl: $cancelUrl
+    ) {
+      id
+      url
+    }
+  }
+`;
+
+export const HANDLE_STRIPE_WEBHOOK = gql`
+  mutation GetStripeWebhookEvents($payload: String!) {
+    getStripeWebhookEvents(payload: $payload)
   }
 `;

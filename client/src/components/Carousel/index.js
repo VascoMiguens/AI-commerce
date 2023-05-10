@@ -20,7 +20,7 @@ function Carousel() {
           nextEl: ".swiper-button-next",
           clickable: true,
         }}
-        loop={true}
+        grabCursor={true}
       >
         {data?.products.map((product) => (
           <SwiperSlide key={product._id} className="swiper-slide">

@@ -14,9 +14,11 @@ export const QUERY_SINGLE_PRODUCT = gql`
   query Product($productId: ID!) {
     product(productId: $productId) {
       _id
+      productName
       imageUrl
       price
-      productName
+      labels
+      webEntities
     }
   }
 `;
@@ -35,35 +37,63 @@ export const QUERY_FEATURED_PRODUCTS = gql`
 `;
 
 export const QUERY_USER_FAVOURITES = gql`
-  query Query($productName: String!) {
-    getFavourites(productName: $productName)
+  query GetFavourites($productId: ID!) {
+    getFavourites(productID: $productId)
   }
 `;
 
 export const QUERY_ME = gql`
   query Me {
     me {
-      favourites {
-        _id
-        isFavourite
-        productId {
-          _id
-          imageUrl
-          price
-          productName
-        }
-      }
-      orders {
-        items {
-          _id
-          imageUrl
-          price
-          productName
-        }
-      }
       _id
       username
       email
+      password
+      orders {
+        _id
+        total
+        items {
+          product {
+            _id
+            productName
+            imageUrl
+            price
+            labels
+            webEntities
+          }
+          quantity
+        }
+        createdAt
+        phone
+        shipping {
+          city
+          country
+          address
+          postalCode
+        }
+        amount_shipping
+        userId
+      }
+      recentArt {
+        _id
+        productName
+        imageUrl
+        price
+        labels
+        webEntities
+      }
+      favourites {
+        _id
+        productId {
+          _id
+          productName
+          imageUrl
+          price
+          labels
+          webEntities
+        }
+        isFavourite
+      }
     }
   }
 `;
@@ -77,6 +107,32 @@ export const QUERY_SEARCH = gql`
         price
         imageUrl
       }
+    }
+  }
+`;
+
+export const ALL_PRODUCTS = gql`
+  query Products {
+    products {
+      _id
+      productName
+      imageUrl
+      price
+      labels
+      webEntities
+    }
+  }
+`;
+
+export const SEARCH_ART = gql`
+  query SearchArt($inputText: String!) {
+    searchArt(inputText: $inputText) {
+      _id
+      productName
+      imageUrl
+      price
+      labels
+      webEntities
     }
   }
 `;

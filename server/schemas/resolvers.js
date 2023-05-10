@@ -30,8 +30,7 @@ const client = new ImageAnnotatorClient({
 const { v4: uuidv4 } = require("uuid");
 
 const stripe = require("stripe")(
-  process.env.REACT_APP_STRIPE_KEY
-);
+process.env.REACT_APP_STRIPE_KEY);
 
 const resolvers = {
   Query: {
@@ -56,12 +55,13 @@ const resolvers = {
       return Order.findOne({ _id: orderId });
     },
     me: async (parent, args, context) => {
+      console.log(context.user);
       if (context.user) {
         const user = await User.findById(context.user._id)
           .populate({
             path: "orders",
             populate: {
-              path: "products.productId",
+              path: "items.product",
               model: "Product",
             },
           })
@@ -86,12 +86,12 @@ const resolvers = {
       }
       throw new AuthenticationError("You need to be logged in!");
     },
-    getFavourites: async (parent, { productName }, context) => {
+    getFavourites: async (parent, { productID }, context) => {
       //if the user logged in
       if (context.user) {
         try {
           //find a product by the product name
-          const product = await Product.findOne({ productName: productName });
+          const product = await Product.findById({ _id: productID });
 
           //find a favourite by the product _id
           const favourite = await Favourite.findOne({ productId: product._id });
@@ -102,7 +102,6 @@ const resolvers = {
           //find a user that has the favourite _id and the logged in user._id
           const user = await User.findOne({
             favourites: favourite._id,
-            userId: context.user._id,
           });
           //if a user is found
           if (user) {
@@ -114,6 +113,11 @@ const resolvers = {
           console.log(err);
         }
       }
+    },
+    searchArt: async (parent, { inputText }) => {
+      const regex = new RegExp(`^${inputText}$`, "i");
+      const search = await Product.find({ labels: { $regex: regex } });
+      return search;
     },
   },
 
@@ -140,20 +144,43 @@ const resolvers = {
 
       return { token, user };
     },
-    newOrder: async (parent, { items, successUrl, cancelUrl }) => {
+    createPaymentSession: async (
+      parent,
+      { items, successUrl, cancelUrl },
+      context
+    ) => {
       try {
         // Map through the items and create line items for each one
-        const lineItems = items.map((item) => ({
-          price_data: {
-            currency: "gbp",
-            product_data: {
-              name: item.productName,
-              images: [item.imageUrl],
-            },
-            unit_amount: item.price * 100,
-          },
+        const lineItems = items.map(
+          (item) => (
+            console.log(item._id),
+            {
+              price_data: {
+                currency: "gbp",
+                product_data: {
+                  name: item._id,
+                  images: [item.imageUrl],
+                },
+                unit_amount: item.price * 100,
+              },
+              quantity: item.quantity,
+            }
+          )
+        );
+
+        const basketItems = items.map((item) => ({
+          productId: item._id,
           quantity: item.quantity,
+          userId: context.user._id,
         }));
+
+        const cart = JSON.stringify(basketItems);
+        const customer = await stripe.customers.create({
+          metadata: {
+            userId: context.user._id,
+            cart: cart,
+          },
+        });
 
         const session = await stripe.checkout.sessions.create({
           payment_method_types: ["card"],
@@ -185,6 +212,7 @@ const resolvers = {
           phone_number_collection: {
             enabled: true,
           },
+          customer: customer.id,
           line_items: lineItems,
           mode: "payment",
           success_url: successUrl,
@@ -200,22 +228,51 @@ const resolvers = {
         throw new Error("Failed to create payment intent");
       }
     },
-    checkout: async (parent, { amount }) => {
-      // Other payment checks and vaalidations
+    createOrder: async (parent, { cart, details }) => {
+      const products = JSON.parse(cart);
+      console.log(cart);
 
-      try {
-        const paymentIntent = await stripe.paymentIntents.create({
-          amount,
-          currency: "gbp",
-        });
-        return {
-          id: paymentIntent.id,
-          client_secret: paymentIntent.client_secret,
-        };
-      } catch (error) {
-        console.log(error);
-        throw new AuthenticationError("Payment Failed!");
-      }
+      console.log(`Details: ${details.customer_details.address}`);
+
+      const items = products.map((item) => ({
+        product: item.productId,
+        quantity: item.quantity,
+      }));
+
+      const line1 = details.customer_details.address.line1;
+      const line2 = details.customer_details.address.line2;
+      const address = line2 ? `${line1}, ${line2}` : line1;
+
+      const order = await Order.create({
+        userId: details.userId,
+        items: items,
+        shipping: {
+          city: details.customer_details.address.city,
+          country: details.customer_details.address.country,
+          address: address,
+          postalCode: details.customer_details.address.postal_code,
+        },
+        phone: details.customer_details.phone,
+        amount_shipping: details.amount_shipping,
+        total: details.total,
+      });
+
+      console.log(order);
+
+      //find the logged in user in the database and push the new favourite
+      const user = await User.findOneAndUpdate(
+        { _id: details.userId },
+        {
+          $push: {
+            orders: {
+              _id: order._id,
+            },
+          },
+        },
+        { new: true }
+      ).populate("orders");
+
+      return order;
     },
     addRecentArt: async (parent, { productName, imageUrl, price }, context) => {
       if (!context.user) {
@@ -276,19 +333,29 @@ const resolvers = {
         throw new Error("Something went wrong");
       }
     },
-    addFavourite: async (parent, { productName }, context) => {
+    addFavourite: async (parent, { productID }, context) => {
       if (!context.user) {
         throw new AuthenticationError(
           "You must be logged in to add favourites"
         );
       }
       try {
-        ///find a product with the product name passed
-        let productFound = await Product.findOne({ productName: productName });
+        ///find a product with the product id passed
+        let productFound = await Product.findById(productID);
 
         if (!productFound) {
           throw new Error("Product not found");
         }
+
+        let favouriteFound = await Favourite.findOne({
+          productId: productID,
+          userId: context.user._id,
+        });
+
+        if (favouriteFound) {
+          throw new Error("Product already added to favourites");
+        }
+
         //create a nwe favourite
         const favourite = await Favourite.create({
           productId: productFound._id,
@@ -314,7 +381,7 @@ const resolvers = {
         throw new Error("Failed to add favorite product");
       }
     },
-    removeFavourite: async (parent, { productName }, context) => {
+    removeFavourite: async (parent, { productID }, context) => {
       if (!context.user) {
         throw new AuthenticationError(
           "You must be logged in to remove favourites"
@@ -323,7 +390,7 @@ const resolvers = {
 
       try {
         ///find a product with the product name passed
-        const product = await Product.findOne({ productName });
+        const product = await Product.findById(productID);
 
         if (!product) {
           throw new Error("Product not found");
@@ -348,8 +415,8 @@ const resolvers = {
           (f) => f.toString() !== favourite._id.toString()
         );
 
-        await user.save();
         await favourite.remove();
+        await user.save();
 
         return user;
       } catch (err) {
@@ -357,29 +424,9 @@ const resolvers = {
         throw new Error("Failed to remove favorite product");
       }
     },
-    createProduct: async (parent, { inputText, price }, context) => {
+    createProduct: async (parent, { artUrl, inputText, price }, context) => {
       try {
-        const text = inputText;
-
-        // create a new image based on the user's input
-        const response = await axios.post(
-          "https://api.openai.com/v1/images/generations",
-          {
-            model: "image-alpha-001",
-            prompt: `generate an image of ${text}`,
-            num_images: 1,
-            size: "1024x1024",
-            response_format: "url",
-          },
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${process.env.REACT_APP_OPENAI_KEY}`,
-            },
-          }
-        );
-
-        const imageUrl = response.data.data[0].url;
+        const imageUrl = artUrl;
         // image extension
         const extension = ".jpg";
         //create a unique id for the image
@@ -389,29 +436,23 @@ const resolvers = {
         // create a file name for the image
         const fileName = `${timestamp}-${uniqueId}${extension}`;
         // google cloud storage bucket name
-        const bucketName = process.env.GOOGLE_CLOUD_BUCKET;
+        const bucketName = "ai-commerce-analysis";
         // create a new file in the bucket
         const file = storage.bucket(bucketName).file(fileName);
-
-        console.log(fileName);
-
         // fetch image data from the specified URL and store it in a stream
         const responseBucket = await axios.get(imageUrl, {
           responseType: "stream",
         });
-
         // create a writable stream for the image file with content type set to JPEG
         const writeStream = file.createWriteStream({
           contentType: "image/jpeg",
         });
-
         // pipe the data stream from the response to the write stream, and wait for it to finish
         await new Promise((resolve, reject) => {
           responseBucket.data.pipe(writeStream);
           writeStream.on("finish", resolve);
           writeStream.on("error", reject);
         });
-
         // call google cloud vision API to detect labels in the image
         // then sort the labels by score and extract only their description
         const [result] = await client.labelDetection(imageUrl);
@@ -422,8 +463,7 @@ const resolvers = {
           : [];
 
         console.log(labels);
-
-        // Call the Google Cloud Vision API to detect webentities in the image at imageUrl
+        // Call Google Cloud Vision API to detect webentities in the image at imageUrl
         // Then sort the webentities by score and extract only their description
         const [result2] = await client.webDetection(imageUrl);
         const webEntities = result2.webDetection.webEntities
@@ -431,26 +471,19 @@ const resolvers = {
               .sort((a, b) => b.score - a.score)
               .map((webEntity) => webEntity.description)
           : [];
-
-        console.log(webEntities);
-
         // get the signed url from google cloud storage
         const [publicUrl] = await file.getSignedUrl({
           action: "read",
           expires: "03-17-2025",
         });
-
-        console.log(publicUrl);
-
         // create a new product
         const product = await Product.create({
-          productName: fileName,
+          productName: inputText,
           imageUrl: publicUrl,
           price: price,
           labels: labels,
           webEntities: webEntities,
         });
-
         // add the product to the user's recentArt array if the user is logged in
         if (context.user) {
           await User.findOneAndUpdate(
@@ -459,7 +492,6 @@ const resolvers = {
             { new: true }
           ).populate("recentArt.product");
         }
-
         return product;
       } catch (err) {
         console.error(err);

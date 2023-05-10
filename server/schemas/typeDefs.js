@@ -22,10 +22,12 @@ const typeDefs = gql`
 
   type Order {
     _id: ID!
-    customerName: String!
-    customerAddress: String!
-    total: Int!
+    userId: ID!
     items: [OrderItem!]!
+    shipping: [ShippingAddress!]!
+    phone: String!
+    amount_shipping: Float!
+    total: Float!
     createdAt: String!
   }
 
@@ -34,9 +36,11 @@ const typeDefs = gql`
     quantity: Int!
   }
 
-  input OrderItemInput {
-    product: ID!
-    quantity: Int!
+  type ShippingAddress {
+    city: String!
+    country: String!
+    address: String!
+    postalCode: String!
   }
 
   type Auth {
@@ -55,6 +59,87 @@ const typeDefs = gql`
     isFavourite: Boolean!
   }
 
+  type StripeCheckoutSession {
+    id: ID!
+    url: String!
+  }
+
+  input CheckoutProduct {
+    _id: String!
+    productName: String!
+    imageUrl: String!
+    price: Int!
+    quantity: Int!
+  }
+
+  type BasketOrder {
+    id: ID!
+    shipping: ShippingInfo!
+    products: [BasketProduct!]!
+  }
+
+  type ShippingInfo {
+    name: String!
+    address: String!
+    city: String!
+    state: String!
+    country: String!
+    postalCode: String!
+  }
+
+  type BasketProduct {
+    id: ID!
+    name: String!
+    description: String!
+    price: Float!
+  }
+
+  scalar DateTime
+
+  type StripePaymentIntent {
+    id: ID!
+    amount: Int!
+    created: DateTime!
+  }
+
+  type StripeCustomer {
+    id: ID!
+    email: String!
+  }
+
+  union StripeWebhookData = StripePaymentIntent | StripeCustomer
+
+  type StripeWebhookEvent {
+    id: ID!
+    type: String!
+    data: StripeWebhookData!
+  }
+
+  input cart {
+    productId: ID!
+    quantity: Int!
+  }
+
+  input details {
+    customer_details: [sub_details!]!
+    total: Int!
+    amount_shipping: Int!
+  }
+
+  input sub_details {
+    address: [adress!]!
+    phone: String!
+  }
+
+  input adress {
+    city: String!
+    country: String!
+    line1: String!
+    line2: String!
+    postal_code: String!
+    state: String
+  }
+
   type Query {
     users: [User]
     user(username: String!): User
@@ -64,24 +149,25 @@ const typeDefs = gql`
     orders: [Order]
     order(orderId: ID!): Order
     recentArt: User
-    getFavourites(productName: String!): Boolean
+    getFavourites(productID: ID!): Boolean
+    searchArt(inputText: String!): [Product]
   }
 
   type Mutation {
     addUser(username: String!, email: String!, password: String!): Auth
     login(email: String!, password: String!): Auth
-    newOrder(
-      customerName: String!
-      customerAddress: String!
-      total: Int!
-      items: [OrderItemInput!]!
-    ): Order!
-    checkout(amount: Int): Payment
+    createPaymentSession(
+      items: [CheckoutProduct!]!
+      successUrl: String!
+      cancelUrl: String!
+    ): StripeCheckoutSession!
+    createOrder(cart: [cart!]!, details: [details!]!): Order!
     addRecentArt(productName: String!, imageUrl: String!, price: Int!): Product!
     addProduct(productName: String!, imageUrl: String!, price: Int): Product!
-    addFavourite(productName: String!): User!
-    removeFavourite(productName: String!): User!
-    createProduct(inputText: String!, price: Int!): Product!
+    addFavourite(productID: ID!): User!
+    removeFavourite(productID: ID!): User!
+    createProduct(artUrl: String!, inputText: String!, price: Int!): Product!
+    getStripeWebhookEvents(payload: String!): Boolean
   }
 `;
 

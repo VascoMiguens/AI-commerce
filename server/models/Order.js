@@ -25,6 +25,14 @@ const orderSchema = new Schema({
       postalCode: { type: String, required: true },
     },
   ],
+  cardDetails: [
+    {
+      brand: { type: String, required: true },
+      last4: { type: String, required: true },
+      exp_month: { type: Number, required: true },
+      exp_year: { type: Number, required: true },
+    },
+  ],
   phone: { type: String, required: true },
   amount_shipping: { type: Number, required: true },
   total: { type: Number, required: true },

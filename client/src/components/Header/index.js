@@ -24,6 +24,9 @@ const Header = () => {
         <h1 className="logo-h">Arty Intelligence</h1>
       </div>
       <div className="right-section">
+        <Link className="" to="/gallery">
+          Gallery{" "}
+        </Link>
         <div className="cart-items">
           <Link className="" to="/basket">
             <svg

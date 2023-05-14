@@ -9,29 +9,20 @@ import { QUERY_USER, QUERY_ME } from "../../utils/queries";
 
 import Auth from "../../utils/auth";
 import PageTransition from "../../components/PageTransition";
+import Order from "../../components/Order";
 
 const Profile = (props) => {
   const { username: userParam } = props;
   const { onAddToCart } = useCart();
+  // set state for tab data
   const [activeTab, setActiveTab] = useState("orders");
 
-  const { loading, data, refetch } = useQuery(
-    userParam ? QUERY_USER : QUERY_ME,
-    {
-      variables: { username: userParam },
-    }
-  );
+  const { data, refetch } = useQuery(userParam ? QUERY_USER : QUERY_ME, {
+    variables: { username: userParam },
+  });
 
   const user = data?.me || data?.user || {};
-
-  // navigate to personal profile page if username is yours
-  if (Auth.loggedIn() && Auth.getProfile().data.username === userParam) {
-    return <Navigate to="/me" />;
-  }
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  console.log(user);
 
   if (!user?.username) {
     return (
@@ -50,7 +41,7 @@ const Profile = (props) => {
         {user?.orders?.length > 0 ? (
           <>
             {user?.orders?.map((order, index) => (
-              <ProductCard />
+              <Order key={order._id} order={order} />
             ))}
           </>
         ) : (

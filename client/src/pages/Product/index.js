@@ -28,7 +28,7 @@ const Product = () => {
         <div className="product-container p-5 m-2 border w-75">
           <div className="section-title">
             <ProductCard
-              key={product.productName}
+              key={product._id}
               _id={product._id}
               imageUrl={product.imageUrl}
               price={product.price}

@@ -25,6 +25,7 @@ const typeDefs = gql`
     userId: ID!
     items: [OrderItem!]!
     shipping: [ShippingAddress!]!
+    cardDetails: [CardDetails!]!
     phone: String!
     amount_shipping: Float!
     total: Float!
@@ -41,6 +42,13 @@ const typeDefs = gql`
     country: String!
     address: String!
     postalCode: String!
+  }
+
+  type CardDetails {
+    brand: String!
+    last4: String!
+    exp_month: Int!
+    exp_year: Int!
   }
 
   type Auth {
@@ -115,29 +123,39 @@ const typeDefs = gql`
     data: StripeWebhookData!
   }
 
+  input OrderDetailsInput {
+    userId: ID!
+    customer_details: CustomerDetailsInput!
+    phone: String!
+    amount_shipping: Float!
+    total: Float!
+  }
+
+  input CustomerDetailsInput {
+    address: AddressInput!
+    city: String!
+    country: String!
+    postal_code: String!
+    phone: String!
+  }
+
+  input CardInfoInput {
+    brand: String!
+    last4: String!
+    exp_month: Int!
+    exp_year: Int!
+  }
+
   input cart {
     productId: ID!
     quantity: Int!
   }
 
-  input details {
-    customer_details: [sub_details!]!
-    total: Int!
-    amount_shipping: Int!
-  }
-
-  input sub_details {
-    address: [adress!]!
-    phone: String!
-  }
-
-  input adress {
+  input AddressInput {
     city: String!
     country: String!
-    line1: String!
-    line2: String!
+    address: String!
     postal_code: String!
-    state: String
   }
 
   type Query {
@@ -161,7 +179,11 @@ const typeDefs = gql`
       successUrl: String!
       cancelUrl: String!
     ): StripeCheckoutSession!
-    createOrder(cart: [cart!]!, details: [details!]!): Order!
+    createOrder(
+      cart: String!
+      details: OrderDetailsInput!
+      cardInfo: CardInfoInput!
+    ): Order!
     addRecentArt(productName: String!, imageUrl: String!, price: Int!): Product!
     addProduct(productName: String!, imageUrl: String!, price: Int): Product!
     addFavourite(productID: ID!): User!

@@ -73,6 +73,12 @@ export const QUERY_ME = gql`
         }
         amount_shipping
         userId
+        cardDetails {
+          brand
+          last4
+          exp_month
+          exp_year
+        }
       }
       recentArt {
         _id

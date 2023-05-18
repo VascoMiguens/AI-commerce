@@ -29,8 +29,7 @@ const client = new ImageAnnotatorClient({
 
 const { v4: uuidv4 } = require("uuid");
 
-const stripe = require("stripe")(
-process.env.REACT_APP_STRIPE_KEY);
+const stripe = require("stripe")(process.env.REACT_APP_STRIPE_KEY);
 
 const resolvers = {
   Query: {
@@ -55,7 +54,6 @@ const resolvers = {
       return Order.findOne({ _id: orderId });
     },
     me: async (parent, args, context) => {
-      console.log(context.user);
       if (context.user) {
         const user = await User.findById(context.user._id)
           .populate({
@@ -90,25 +88,19 @@ const resolvers = {
       //if the user logged in
       if (context.user) {
         try {
-          //find a product by the product name
-          const product = await Product.findById({ _id: productID });
-
           //find a favourite by the product _id
-          const favourite = await Favourite.findOne({ productId: product._id });
-          //if no faourite is found in the database return false
+          const favourite = await Favourite.findOne({
+            productId: productID,
+            userId: context.user._id,
+          });
+
+          console.log(favourite);
+          //if no favourite is found in the database return false
           if (!favourite) {
             return false;
           }
-          //find a user that has the favourite _id and the logged in user._id
-          const user = await User.findOne({
-            favourites: favourite._id,
-          });
-          //if a user is found
-          if (user) {
-            return true;
-          } else {
-            return false;
-          }
+          //if a favourite is found in the database return trueq
+          return true;
         } catch (err) {
           console.log(err);
         }
@@ -151,22 +143,17 @@ const resolvers = {
     ) => {
       try {
         // Map through the items and create line items for each one
-        const lineItems = items.map(
-          (item) => (
-            console.log(item._id),
-            {
-              price_data: {
-                currency: "gbp",
-                product_data: {
-                  name: item._id,
-                  images: [item.imageUrl],
-                },
-                unit_amount: item.price * 100,
-              },
-              quantity: item.quantity,
-            }
-          )
-        );
+        const lineItems = items.map((item) => ({
+          price_data: {
+            currency: "gbp",
+            product_data: {
+              name: item._id,
+              images: [item.imageUrl],
+            },
+            unit_amount: item.price * 100,
+          },
+          quantity: item.quantity,
+        }));
 
         const basketItems = items.map((item) => ({
           productId: item._id,
@@ -183,7 +170,8 @@ const resolvers = {
         });
 
         const session = await stripe.checkout.sessions.create({
-          payment_method_types: ["card"],
+          payment_method_types: ["card", "klarna"],
+          billing_address_collection: "required",
           shipping_address_collection: { allowed_countries: ["GB"] },
           shipping_options: [
             {
@@ -228,11 +216,10 @@ const resolvers = {
         throw new Error("Failed to create payment intent");
       }
     },
-    createOrder: async (parent, { cart, details }) => {
+    createOrder: async (parent, { cart, details, cardInfo }) => {
       const products = JSON.parse(cart);
-      console.log(cart);
 
-      console.log(`Details: ${details.customer_details.address}`);
+      console.log("resolvers", cardInfo);
 
       const items = products.map((item) => ({
         product: item.productId,
@@ -252,12 +239,16 @@ const resolvers = {
           address: address,
           postalCode: details.customer_details.address.postal_code,
         },
+        cardDetails: {
+          brand: cardInfo.brand,
+          last4: cardInfo.last4,
+          exp_month: cardInfo.exp_month,
+          exp_year: cardInfo.exp_year,
+        },
         phone: details.customer_details.phone,
         amount_shipping: details.amount_shipping,
         total: details.total,
       });
-
-      console.log(order);
 
       //find the logged in user in the database and push the new favourite
       const user = await User.findOneAndUpdate(
@@ -462,7 +453,6 @@ const resolvers = {
               .map((label) => label.description)
           : [];
 
-        console.log(labels);
         // Call Google Cloud Vision API to detect webentities in the image at imageUrl
         // Then sort the webentities by score and extract only their description
         const [result2] = await client.webDetection(imageUrl);

@@ -60,7 +60,7 @@ function Order(props) {
         ))}
       </div>
       <table className="order-cost">
-        <body>
+        <tbody>
           <tr>
             <td>Shipping</td>
             <td>{amount_shipping}</td>
@@ -69,7 +69,7 @@ function Order(props) {
             <td>Total</td>
             <td>£{total / 100}</td>
           </tr>
-        </body>
+        </tbody>
       </table>
     </div>
   );

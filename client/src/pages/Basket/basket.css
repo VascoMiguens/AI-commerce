@@ -1,0 +1,140 @@
+.basket {
+  display: flex;
+  justify-content: center;
+  width: 90vw;
+}
+
+.basket-item {
+  width: 60%;
+}
+
+.checkout {
+  width: 40%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  margin-left: 50px;
+}
+
+.basket-items {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.basket-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.basket-table-header {
+  font-weight: bold;
+  text-align: center;
+  border-bottom: 1px solid var(--dark);
+}
+
+.table-header-row {
+  border-bottom: 2px solid #ccc;
+}
+
+.table-header-item {
+  text-align: center;
+  width: 10%;
+}
+
+.basket-table-body td {
+  padding: 10px;
+  text-align: center;
+}
+
+.basket-frame {
+  background-color: #ddc;
+  border: solid 1.2vmin #eee;
+  border-bottom-color: #fff;
+  border-left-color: #eee;
+  border-radius: 2px;
+  border-right-color: #eee;
+  border-top-color: #ddd;
+  box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.25) inset,
+    0 1px 3px 2px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  margin: 20px auto;
+  width: 112px;
+  height: 112px;
+  position: relative;
+}
+.basket-image {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.product-image-basket {
+  height: 100px;
+  width: 100px;
+  object-fit: cover;
+}
+
+.product-details {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.quantity-control {
+  font-weight: bold;
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+
+.quantity-input {
+  width: 20px;
+  border: none;
+  text-align: center;
+}
+
+.quantity-btn {
+  background-color: transparent !important;
+  border: none;
+  font-size: 25px;
+  color: none !important;
+  cursor: pointer;
+}
+
+.checkout-summary {
+  display: flex;
+  flex-direction: column;
+  margin-top: 20px;
+  font-size: 20px;
+}
+
+.checkout-summary tr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  border-bottom: 1px solid var(--dark);
+}
+
+.checkout-summary tr:last-child {
+  border-bottom: none;
+}
+
+.checkout-summary tr td:first-child {
+  padding: 10px;
+  text-align: left;
+}
+
+.checkout-summary tr td:last-child {
+  padding: 10px;
+  text-align: right;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

@@ -24,6 +24,9 @@ const Header = () => {
         <h1 className="logo-h">Arty Intelligence</h1>
       </div>
       <div className="right-section">
+        <Link className="" to="/">
+          Home{" "}
+        </Link>
         <Link className="" to="/gallery">
           Gallery{" "}
         </Link>

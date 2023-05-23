@@ -103,31 +103,7 @@ const ProductCard = (props) => {
           </div>
         </div>
       ) : (
-        <div className="border-product">
-          <div className="product">
-            <div className="image-frame">
-              <img
-                src={`${imageUrl}`}
-                alt={productName}
-                className="product-image"
-              />
-            </div>
-          </div>
-          <div className="product-details">
-            <div className="product-price-pr ml-5">
-              <p className="text-lg mr-5">How it was created</p>
-              <p className="text-lg mr-5">£{price}</p>
-              <div className="product-buttons">
-                <button className="btn" onClick={onAddToCart}>
-                  Remove
-                </button>
-                <button className="btn-skin" onClick={handleToggleFavourite}>
-                  {isFavourite ? <FaHeart /> : <FaRegHeart />}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <></>
       )}
     </div>
   );

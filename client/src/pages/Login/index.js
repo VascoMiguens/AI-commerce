@@ -40,6 +40,12 @@ const Login = ({ setIsLogged }) => {
   const handleSignUpFormChange = (event) => {
     const { name, value } = event.target;
 
+    // Only allow letters, numbers, and apostrophes
+    const regex = /^[a-zA-Z0-9']+$/;
+    if (name === "username" && !regex.test(value)) {
+      return;
+    }
+
     setSignUpFormState({
       ...signUpFormState,
       [name]: value,

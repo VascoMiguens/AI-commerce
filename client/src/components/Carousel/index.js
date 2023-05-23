@@ -5,6 +5,8 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/swiper-bundle.min.css";
 import { Navigation, Pagination, A11y, EffectFade } from "swiper";
 import "./carousel.css";
+import { Link } from "react-router-dom";
+import { FaCartPlus, FaHeart, FaRegHeart } from "react-icons/fa";
 
 function Carousel() {
   const { data } = useQuery(ALL_PRODUCTS);
@@ -29,6 +31,11 @@ function Carousel() {
               alt={product.productName}
               className="swiper-slide-img"
             />
+            <div className="swiper-slide-content">
+              <Link className="link" to={`/product/${product._id}`}>
+                View
+              </Link>
+            </div>
           </SwiperSlide>
         ))}
       </Swiper>

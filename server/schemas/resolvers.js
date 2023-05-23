@@ -142,6 +142,16 @@ const resolvers = {
       context
     ) => {
       try {
+        // Calculate the subtotal
+        const subtotal = items.reduce(
+          (total, item) => total + item.price * item.quantity,
+          0
+        );
+
+        // Calculate the tax amount
+        const taxRate = 0.15; // Replace with your actual tax rate
+        const tax = subtotal * taxRate;
+
         // Map through the items and create line items for each one
         const lineItems = items.map((item) => ({
           price_data: {
@@ -154,6 +164,17 @@ const resolvers = {
           },
           quantity: item.quantity,
         }));
+
+        lineItems.push({
+          price_data: {
+            currency: "gbp",
+            product_data: {
+              name: "Tax",
+            },
+            unit_amount: tax * 100,
+          },
+          quantity: 1,
+        });
 
         const basketItems = items.map((item) => ({
           productId: item._id,
@@ -177,22 +198,11 @@ const resolvers = {
             {
               shipping_rate_data: {
                 type: "fixed_amount",
-                fixed_amount: { amount: 0, currency: "gbp" },
-                display_name: "Free shipping",
+                fixed_amount: { amount: 500, currency: "gbp" },
+                display_name: "Fixed shipping",
                 delivery_estimate: {
                   minimum: { unit: "business_day", value: 5 },
                   maximum: { unit: "business_day", value: 7 },
-                },
-              },
-            },
-            {
-              shipping_rate_data: {
-                type: "fixed_amount",
-                fixed_amount: { amount: 1500, currency: "gbp" },
-                display_name: "Next day air",
-                delivery_estimate: {
-                  minimum: { unit: "business_day", value: 1 },
-                  maximum: { unit: "business_day", value: 1 },
                 },
               },
             },

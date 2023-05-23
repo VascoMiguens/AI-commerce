@@ -5,26 +5,19 @@ const { signToken } = require("../utils/auth");
 const axios = require("axios");
 const { Storage } = require("@google-cloud/storage");
 const storage = new Storage({
-  keyFilename: "./keyfile.json",
+  projectId: process.env.GCS_PROJECT_ID,
+  credentials: {
+    client_email: process.env.GCS_CLIENT_EMAIL,
+    private_key: process.env.GCS_PRIVATE_KEY,
+  },
 });
-// const storage = new Storage({
-//   projectId: process.env.GCS_PROJECT_ID,
-//   credentials: {
-//     client_email: process.env.GCS_CLIENT_EMAIL,
-//     private_key: process.env.GCS_PRIVATE_KEY,
-//   },
-// });
 const { ImageAnnotatorClient } = require("@google-cloud/vision");
 
-// const client = new ImageAnnotatorClient({
-//   credentials: {
-//     client_email: process.env.GCS_CLIENT_EMAIL,
-//     private_key: process.env.GCS_PRIVATE_KEY,
-//   },
-// });
-
 const client = new ImageAnnotatorClient({
-  keyFilename: "./keyfile.json",
+  credentials: {
+    client_email: process.env.GCS_CLIENT_EMAIL,
+    private_key: process.env.GCS_PRIVATE_KEY,
+  },
 });
 
 const { v4: uuidv4 } = require("uuid");
@@ -228,8 +221,6 @@ const resolvers = {
     },
     createOrder: async (parent, { cart, details, cardInfo }) => {
       const products = JSON.parse(cart);
-
-      console.log("resolvers", cardInfo);
 
       const items = products.map((item) => ({
         product: item.productId,

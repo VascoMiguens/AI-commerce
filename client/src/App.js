@@ -6,12 +6,7 @@ import {
   createHttpLink,
 } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import CartProvider from "./context/CartContext";
@@ -22,9 +17,10 @@ import Basket from "./pages/Basket";
 import Product from "./pages/Product";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
-import Checkout from "./pages/Checkout";
 import auth from "./utils/auth";
-import { AnimatePresence } from "framer-motion";
+import Webhook from "./pages/Webhook";
+import Gallery from "./pages/Gallery";
+import Success from "./pages/Success";
 
 // Construct our main GraphQL API endpoint
 const httpLink = createHttpLink({
@@ -64,31 +60,22 @@ function App() {
       <Elements stripe={stripePromise}>
         <CartProvider>
           <Router>
-            <AnimatePresence initial={false}>
-              <Layout>
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route
-                    path="/login"
-                    element={<Login setIsLogged={setIsLogged} />}
-                  />
-                  <Route path="/signup" element={<Login />} />
-                  <Route path="/basket" element={<Basket />} />
-                  <Route path="/profiles/:username" element={<Profile />} />
-                  <Route path="/product/:productId" element={<Product />} />
-                  <Route
-                    path="/checkout"
-                    element={
-                      isLogged ? (
-                        <Checkout />
-                      ) : (
-                        <Navigate to="/login" state={{ from: "/checkout" }} />
-                      )
-                    }
-                  />
-                </Routes>
-              </Layout>
-            </AnimatePresence>
+            <Layout>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route
+                  path="/login"
+                  element={<Login setIsLogged={setIsLogged} />}
+                />
+                <Route path="/signup" element={<Login />} />
+                <Route path="/basket" element={<Basket />} />
+                <Route path="/profiles/:username" element={<Profile />} />
+                <Route path="/product/:productId" element={<Product />} />
+                <Route path="/webhook" element={<Webhook />} />
+                <Route path="/gallery" element={<Gallery />} />
+                <Route path="/success" element={<Success />} />
+              </Routes>
+            </Layout>
           </Router>
         </CartProvider>
       </Elements>

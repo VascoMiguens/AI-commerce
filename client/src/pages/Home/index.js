@@ -1,184 +1,198 @@
 // UI Components
 import ProductCard from "../../components/ProductCard";
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import "react-responsive-carousel/lib/styles/carousel.min.css";
-import { Carousel } from "react-responsive-carousel";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import "../Home/home.css";
-import GalleryGrid from "../../components/Gallery";
-// import { useQuery } from "@apollo/client";
-// import { QUERY_FEATURED_PRODUCTS } from "../../utils/queries";
-
-// Shopping Cart
+import Pagination from "../../components/Pagination";
 import { useCart } from "../../context/CartContext";
-
-import { FaSearch, FaHeart } from "react-icons/fa";
 //save artwork mutation
-import { SAVE_ARTWORK, SAVE_PRODUCT } from "../../utils/mutations";
+import { CREATE_ART } from "../../utils/mutations";
 import { useQuery, useMutation } from "@apollo/client";
 
 //get user
 import { QUERY_SEARCH } from "../../utils/queries";
+import auth from "../../utils/auth";
 
-//import auth
-import Auth from "../../utils/auth";
-
+import FullPageLoader from "../../components/FullPageLoader";
+import PageTransition from "../../components/PageTransition";
+import Carousel from "../../components/Carousel";
+import deepai from "deepai";
+import { Link } from "react-router-dom";
 const Home = () => {
   const { onAddToCart } = useCart();
   const [input, setInput] = useState("");
-  //create state to hold the generated name
-  const [artName, setArtName] = useState("");
+  const [createArt] = useMutation(CREATE_ART);
   // create state to hold generated price
   const [price, setPrice] = useState("");
   // create state to hold generated image
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageUrl, setImageUrl] = useState(null);
+  const [isInputNotEmpty, setIsInputNotEmpty] = useState(false);
   //get the current user's data
+  const [dataLoaded, setDataLoaded] = useState(false);
   const { data, refetch } = useQuery(QUERY_SEARCH);
-  const userData = data?.recentArt || {};
+  const userData = useMemo(() => {
+    return data?.recentArt || {};
+  }, [data]);
   const [loading, setLoading] = useState(false);
+  const isLoggedIn = auth.loggedIn();
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 3;
+  const generateImg = useRef(null);
 
-  const [saveArtwork] = useMutation(SAVE_ARTWORK);
-  const [addProduct] = useMutation(SAVE_PRODUCT);
-  const onInputChange = (event) => {
-    setInput(event.target.value);
-    const inputWords = input.trim().split(/\s+/).length;
-    setPrice(inputWords * 10);
+  // Update the current page number when the page changes
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
   };
 
-  const onButtonSubmit = () => {
-    //generate a random adjective or noun
-    const adjectives = [
-      "mystical",
-      "whimsical",
-      "ethereal",
-      "dreamy",
-      "cosmic",
-    ];
-    const nouns = ["garden", "forest", "ocean", "mountain", "cloud"];
-    const randomIndex = Math.floor(Math.random() * 5);
-    const randomWord =
-      Math.random() < 0.5 ? adjectives[randomIndex] : nouns[randomIndex];
+  const getPaginatedRecentSearches = (data) => {
+    // Calculate the starting index of the current page
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    // Calculate the ending index of the current page
+    const endIndex = startIndex + itemsPerPage;
+    return data.slice(startIndex, endIndex);
+  };
 
-    const newArtName = `${randomWord} ${input}`;
-    axios
-      .post(
-        "https://api.openai.com/v1/images/generations",
-        {
-          model: "image-alpha-001",
-          prompt: `generate an image of ${input}`,
-          num_images: 1,
-          size: "512x512",
-          response_format: "url",
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
-          },
-        }
-      )
+  const paginatedData = dataLoaded
+    ? // Retrieves the paginated data if dataLoaded is true
+      getPaginatedRecentSearches(userData?.recentArt)
+    : // Empty array if dataLoaded is false
+      [];
+
+  // Determine the length of the data if dataLoaded is true, otherwise assign an empty array
+  let dataLength = dataLoaded ? userData.recentArt.length : [];
+
+  useEffect(() => {
+    if (userData && Object.keys(userData).length > 0) {
+      // Set dataLoaded to true if userData is not empty
+      setDataLoaded(true);
+    }
+  }, [userData]);
+
+  let userInput;
+  // handle input change
+  const onInputChange = (event) => {
+    userInput = event.target.value;
+    if (userInput.length > 0) {
+      setIsInputNotEmpty(true);
+    } else {
+      setIsInputNotEmpty(false);
+    }
+    const inputWords = input.trim().split(/\s+/).length;
+    setPrice(parseInt(inputWords * 10));
+  };
+
+  const onButtonSubmit = async () => {
+    setInput(userInput);
+    setLoading(true);
+    deepai.setApiKey(process.env.REACT_APP_DEEPAI_API_KEY);
+    // create a new image based on the user's input
+
+    const response = await deepai.callStandardApi("text2img", {
+      text: userInput,
+      grid_size: "1",
+    });
+    const imageUrl = response.output_url;
+    setLoading(true);
+    console.log(price);
+    createArt({
+      variables: {
+        inputText: userInput,
+        artUrl: imageUrl,
+        price: price,
+      },
+    })
       .then((response) => {
-        const newImageURL = response.data.data[0].url;
-        const formData = new FormData();
-        formData.append("file", newImageURL);
-        formData.append("upload_preset", "ai-commerce");
-        axios
-          .post(
-            "https://api.cloudinary.com/v1_1/dejnb8hlo/image/upload",
-            formData
-          )
-          .then((response) => {
-            const cloudinaryURl = response.data.secure_url;
-            setImageUrl(cloudinaryURl);
-            setArtName(newArtName);
-
-            if (Auth.loggedIn()) {
-              try {
-                const data = saveArtwork({
-                  variables: {
-                    productName: newArtName,
-                    imageUrl: cloudinaryURl,
-                    price: price,
-                  },
-                });
-              } catch (err) {
-                console.error(err);
-              }
-            } else {
-              addProduct({
-                variables: {
-                  productName: newArtName,
-                  imageUrl: cloudinaryURl,
-                  price: price,
-                },
-              });
-            }
-            setLoading(false);
-          });
+        setImageUrl(response.data.createProduct.imageUrl);
+        setPrice(response.data.createProduct.price);
+        generateImg.current.scrollIntoView({ behavior: "smooth" });
       })
-      .catch((err) => console.log(err));
+      .catch((error) => {
+        console.log(error);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
   //refetch userdata and populate lastest search
   refetch();
 
-  useEffect(() => {
-    setArtName("");
-  }, [input]);
-
   return (
     <>
-      <div className="home-container">
-        <div className="left-section">
-          <h2 className="search-h">Search for the art you want to see!</h2>
-          <div className="search-section">
-            <input
-              className="inputSearch"
-              type="text"
-              onChange={onInputChange}
-              placeholder="Search"
-            />
-            <button className="searchButton" onClick={onButtonSubmit}>
-              <FaSearch className="w-6 h-6 text-gray-400 search-icon" />
-            </button>
+      <PageTransition>
+        {loading ? (
+          <FullPageLoader loaded={true} />
+        ) : (
+          <div className="home-container row row-cols-1 my-5 row-cols-sm-1 row-cols-md-1 row-cols-lg-2 w-90 border m-2 p-5">
+            <h1 className="title">Create Your Own Artwork!</h1>
+            <div className="art">
+              <div className={isLoggedIn ? "left-section" : "logged-out"}>
+                <div className="search-section">
+                  <input
+                    className="inputSearch"
+                    type="text"
+                    onChange={onInputChange}
+                    placeholder="Enter your artwork description..."
+                  />
+                  <button
+                    className={`home-btn ${isInputNotEmpty ? "generate" : ""}`}
+                    onClick={onButtonSubmit}
+                    disabled={!isInputNotEmpty}
+                  >
+                    Create
+                  </button>
+                </div>
+                {imageUrl && !loading && (
+                  <div className="searchedImage">
+                    <div className="image-frame" ref={generateImg}>
+                      <img
+                        src={imageUrl}
+                        className="renderedImage"
+                        alt="Your Art"
+                      />
+                    </div>
+                    <div className="image-details">
+                      <p className="image-price">Price: ${price}</p>
+                      <button className="btn" onClick={onAddToCart}>
+                        Add to Cart
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {imageUrl && auth.loggedIn() && (
+                <div className="right-section">
+                  <h2 className="right-h">Your Recent Artwork!</h2>
+                  <div className="recent-img">
+                    {paginatedData?.map((item) => (
+                      <ProductCard
+                        key={item._id}
+                        _id={item._id}
+                        imageUrl={item.imageUrl}
+                        price={item.price}
+                        productName={item.productName}
+                        labels={item.labels}
+                        onAddToCart={() => onAddToCart(item)}
+                      />
+                    ))}
+                    <Pagination
+                      currentPage={currentPage}
+                      itemsPerPage={itemsPerPage}
+                      totalItems={dataLength}
+                      onPageChange={handlePageChange}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+            <Link to="/gallery" className="gallery-text">
+              Visit the Gallery
+            </Link>
+            <div className="carousel">
+              <Carousel />
+            </div>
           </div>
-          <div className="searchedImage">
-            {imageUrl && <img src={imageUrl} alt={artName} />}
-            {artName && (
-              <>
-                <p>{artName}</p>
-                <p>Price: ${price}</p>
-              </>
-            )}
-          </div>
-          <div className="cartButton">
-            <button className="cartButton" onClick={onAddToCart}>
-              Add to Cart
-            </button>
-          </div>
-        </div>
-        <div className="right-section">
-          <h2 className="right-h">Your Recent Artwork!</h2>
-          <div className="recent-img">
-            {userData?.recentArt?.map((art, index) => (
-              <ProductCard
-                key={art.productName}
-                {...art}
-                onAddToCart={() => onAddToCart(art)}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="w-25 border m-2 p-5">
-        {userData?.recentArt?.map((art, index) => (
-          <ProductCard
-            key={art._id}
-            {...art}
-            onAddToCart={() => onAddToCart(art)}
-          />
-        ))}
-      </div>
+        )}
+      </PageTransition>
     </>
   );
 };

@@ -18,7 +18,7 @@ const server = new ApolloServer({
   context: authMiddleware,
 });
 
-app.use(express.urlencoded({ extended: false })); 
+app.use(express.urlencoded({ extended: false }));
 app.use((req, res, next) => {
   if (req.originalUrl === "/webhook") {
     next();
@@ -35,60 +35,86 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../client/build/index.html"));
 });
 
+let cardInfo;
+
 //Stripe webhook endpoint
-app.post("/webhook", express.raw({ type: "application/json" }), (req, res) => {
-  let endpointSecret = process.env.STRIPE_ENDPOINT_SECRET;
-  const sig = req.headers["stripe-signature"];
+app.post(
+  "/webhook",
+  express.raw({ type: "application/json" }),
+  async (req, res) => {
+    let endpointSecret = process.env.STRIPE_ENDPOINT_SECRET;
+    const sig = req.headers["stripe-signature"];
 
-  let data;
-  let eventType;
+    let data;
+    let eventType;
 
-  const rawBody = req.body.toString();
-  if (endpointSecret) {
-    let event;
-    try {
-      // Verify webhook signature and extract the event
-      event = stripe.webhooks.constructEvent(rawBody, sig, endpointSecret);
-      console.log("Webhook verified");
-    } catch (err) {
-      console.error(
-        "Error occurred while validating Stripe webhook",
-        err.message
-      );
-      return res.status(400).send(`Webhook Error: ${err.message}`);
+    const rawBody = req.body.toString();
+    if (endpointSecret) {
+      let event;
+      try {
+        // Verify webhook signature and extract the event
+        event = stripe.webhooks.constructEvent(rawBody, sig, endpointSecret);
+        console.log("Webhook verified");
+      } catch (err) {
+        console.error(
+          "Error occurred while validating Stripe webhook",
+          err.message
+        );
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+      }
+      // Extract the object from the event
+      data = event.data.object;
+      // Extract the type of object from the event
+      eventType = event.type;
+    } else {
+      data = req.body.object;
+      eventType = req.body.type;
     }
-    // Extract the object from the event
-    data = event.data.object;
-    // Extract the type of object from the event
-    eventType = event.type;
-  } else {
-    data = req.body.data.object;
-    eventType = req.body.type;
-  }
 
-  // Handle the event
-  if (eventType === "checkout.session.completed") {
-    // Fetch the order from the database
-    stripe.customers
-      .retrieve(data.customer)
-      .then((customer) => {
-        const cart = customer.metadata.cart;
-        const total = data.amount_total;
-        const amount_shipping = data.total_details.amount_shipping;
-        const details = {
-          customer_details: data.customer_details,
-          total: total,
-          amount_shipping: amount_shipping,
-        };
-        // call the mutation to create a new order
-        resolvers.Mutation.createOrder(null, { cart: cart, details: details });
-      })
-      .catch((err) => console.log(err.message));
-  }
+    if (eventType === "payment_intent.succeeded") {
+      // Retrieve the payment method used to create the payment intent
+      const paymentMethod = await stripe.paymentMethods.retrieve(
+        data.payment_method
+      );
+      // Retrieve the card details from the payment method
+      const card = paymentMethod.card;
+      const cardDetails = {
+        brand: card.brand,
+        last4: card.last4,
+        exp_month: card.exp_month,
+        exp_year: card.exp_year,
+      };
 
-  // Return a response to acknowledge receipt of the event
-  res.json({ received: true });
-});
+      cardInfo = cardDetails;
+    }
+
+    // Handle the event
+    let items;
+    let customerInfo;
+    if (eventType === "checkout.session.completed") {
+      // Fetch the order from the database
+      const customerDetails = await stripe.customers.retrieve(data.customer);
+      items = customerDetails.metadata.cart;
+      customerInfo = {
+        userId: customerDetails.metadata.userId,
+        customer_details: data.customer_details,
+        total: data.amount_total,
+        amount_shipping: data.total_details.amount_shipping,
+      };
+    }
+
+    if (items) {
+      resolvers.Mutation.createOrder(null, {
+        cart: items,
+        details: customerInfo,
+        cardInfo: cardInfo,
+      });
+    }
+
+    // Return a response to acknowledge receipt of the event
+    res.json({ received: true });
+  }
+);
 
 // Create a new instance of an Apollo server with the GraphQL schema
 const startApolloServer = async (typeDefs, resolvers) => {

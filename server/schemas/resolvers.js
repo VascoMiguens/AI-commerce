@@ -69,7 +69,11 @@ const resolvers = {
     },
     recentArt: async (parent, args, context) => {
       if (context.user) {
-        return User.findOne({ _id: context.user._id }).populate("recentArt");
+        return User.findOne({ _id: context.user._id }).populate({
+          path: "recentArt",
+          // Sort by createdAt field in descending order
+          options: { sort: { createdAt: -1 } },
+        });
       }
       throw new AuthenticationError("You need to be logged in!");
     },

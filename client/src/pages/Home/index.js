@@ -89,10 +89,8 @@ const Home = () => {
 
     const response = await deepai.callStandardApi("text2img", {
       method: "POST", // Change the request method to POST
-      data: {
-        text: userInput,
-        grid_size: "1",
-      },
+      text: userInput,
+      grid_size: "1",
     });
     const imageUrl = response.output_url;
     setLoading(true);

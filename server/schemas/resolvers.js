@@ -8,12 +8,12 @@ const { Storage } = require("@google-cloud/storage");
 const path = require("path");
 
 const storage = new Storage({
-  keyFilename: path.join(__dirname, "../google-credentials.json"),
+  keyFilename: "/app/google-credentials.json",
 });
 const { ImageAnnotatorClient } = require("@google-cloud/vision");
 
 const client = new ImageAnnotatorClient({
-  keyFilename: path.join(__dirname, "../google-credentials.json"),
+  keyFilename: "/app/google-credentials.json",
 });
 
 const { v4: uuidv4 } = require("uuid");

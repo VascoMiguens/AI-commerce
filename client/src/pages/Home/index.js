@@ -95,7 +95,6 @@ const Home = () => {
     const imageUrl = response.output_url;
     setImageUrl(imageUrl);
     setLoading(true);
-    console.log(price);
     createArt({
       variables: {
         inputText: userInput,
@@ -104,7 +103,6 @@ const Home = () => {
       },
     })
       .then((response) => {
-        console.log(response.data.createProduct.imageUrl);
         setImageUrl(response.data.createProduct.imageUrl);
         setPrice(response.data.createProduct.price);
         generateImg.current.scrollIntoView({ behavior: "smooth" });

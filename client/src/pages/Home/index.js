@@ -93,6 +93,7 @@ const Home = () => {
       grid_size: "1",
     });
     const imageUrl = response.output_url;
+    setImageUrl(imageUrl);
     setLoading(true);
     console.log(price);
     createArt({
@@ -103,6 +104,7 @@ const Home = () => {
       },
     })
       .then((response) => {
+        console.log(response.data.createProduct.imageUrl);
         setImageUrl(response.data.createProduct.imageUrl);
         setPrice(response.data.createProduct.price);
         generateImg.current.scrollIntoView({ behavior: "smooth" });

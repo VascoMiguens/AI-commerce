@@ -4,20 +4,16 @@ const { User, Product, Order, Favourite } = require("../models");
 const { signToken } = require("../utils/auth");
 const axios = require("axios");
 const { Storage } = require("@google-cloud/storage");
+
+const path = require("path");
+
 const storage = new Storage({
-  projectId: process.env.GCS_PROJECT_ID,
-  credentials: {
-    client_email: process.env.GCS_CLIENT_EMAIL,
-    private_key: process.env.GCS_PRIVATE_KEY,
-  },
+  keyFilename: path.join(__dirname, "../google-credentials.json"),
 });
 const { ImageAnnotatorClient } = require("@google-cloud/vision");
 
 const client = new ImageAnnotatorClient({
-  credentials: {
-    client_email: process.env.GCS_CLIENT_EMAIL,
-    private_key: process.env.GCS_PRIVATE_KEY,
-  },
+  keyFilename: path.join(__dirname, "../google-credentials.json"),
 });
 
 const { v4: uuidv4 } = require("uuid");

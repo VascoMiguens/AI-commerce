@@ -22,14 +22,12 @@ const PageTransition = ({ children }) => {
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
+            opacity: 1,
           }}
           initial={{
-            x: "0",
             opacity: 0,
           }}
           animate={{
-            x: 0,
-            y: 0,
             opacity: 1,
             transition: {
               duration: 1,
@@ -44,6 +42,7 @@ const PageTransition = ({ children }) => {
             src={Logo}
             style={{
               width: "100px",
+              opacity: 0,
             }}
             initial={{
               opacity: 0,
@@ -60,13 +59,21 @@ const PageTransition = ({ children }) => {
           />
         </motion.div>
       )}
-      <motion.div
-        style={{
-          opacity: transitionVisible ? 0 : 1,
-        }}
-      >
-        {children}
-      </motion.div>
+      {!transitionVisible && (
+        <motion.div
+          style={{
+            opacity: 0,
+          }}
+          animate={{
+            opacity: 1,
+            transition: {
+              duration: 1,
+            },
+          }}
+        >
+          {children}
+        </motion.div>
+      )}
     </>
   );
 };

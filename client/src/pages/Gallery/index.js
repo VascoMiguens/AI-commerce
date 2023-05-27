@@ -5,6 +5,7 @@ import ProductCard from "../../components/ProductCard";
 import "./gallery.css";
 import { useCart } from "../../context/CartContext";
 import Pagination from "../../components/Pagination";
+import PageTransition from "../../components/PageTransition";
 
 const Gallery = () => {
   const { onAddToCart } = useCart();
@@ -49,37 +50,39 @@ const Gallery = () => {
 
   return (
     <>
-      <div className="gallery">
-        <div className="gallery-search">
-          <input
-            type="text"
-            placeholder="search..."
-            onChange={onInputChange}
-            className="gallerySearch"
-          />
-        </div>
-        <div className="results-container">
-          <div className="results">
-            {paginatedItems?.map((item) => (
-              <ProductCard
-                key={item._id}
-                productName={item.productName}
-                price={item.price}
-                imageUrl={item.imageUrl}
-                userName={item.username}
-                _id={item._id}
-                onAddToCart={() => onAddToCart(item)}
-              />
-            ))}
+      <PageTransition>
+        <div className="gallery">
+          <div className="gallery-search">
+            <input
+              type="text"
+              placeholder="search..."
+              onChange={onInputChange}
+              className="gallerySearch"
+            />
           </div>
-          <Pagination
-            currentPage={currentPage}
-            itemsPerPage={itemsPerPage}
-            totalItems={totalItems}
-            onPageChange={handlePageChange}
-          />
+          <div className="results-container">
+            <div className="results">
+              {paginatedItems?.map((item) => (
+                <ProductCard
+                  key={item._id}
+                  productName={item.productName}
+                  price={item.price}
+                  imageUrl={item.imageUrl}
+                  userName={item.username}
+                  _id={item._id}
+                  onAddToCart={() => onAddToCart(item)}
+                />
+              ))}
+            </div>
+            <Pagination
+              currentPage={currentPage}
+              itemsPerPage={itemsPerPage}
+              totalItems={totalItems}
+              onPageChange={handlePageChange}
+            />
+          </div>
         </div>
-      </div>
+      </PageTransition>
     </>
   );
 };

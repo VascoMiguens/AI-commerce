@@ -42,7 +42,8 @@
 }
 
 .brush {
-  position: inherit;
+  top: 22px;
+  position: absolute;
   width: 100px;
   height: 100px;
   animation-name: brush;
@@ -52,7 +53,7 @@
 }
 
 .line {
-  top: 98px;
+  top: 120px;
   position: relative;
   width: 0;
   height: 2px;
@@ -79,4 +80,60 @@
   to {
     left: 96%;
   }
+}
+
+/* Styles for screens with a maximum width of 768px */
+@media (max-width: 768px) {
+  .full-page-loader {
+    /* Custom styles for screens up to 768px */
+    width: 100%;
+    height: 100%;
+    opacity: 0.5;
+    background-color: gray;
+  }
+
+  .animation-container {
+    /* Custom styles for screens up to 768px */
+    width: 40vw;
+    height: 30vh;
+  }
+
+  .animation-title {
+    /* Custom styles for screens up to 768px */
+    font-size: 1.5em;
+  }
+
+  /* Add more styles for other elements if needed */
+}
+
+/* Styles for screens with a minimum width of 1024px */
+@media (min-width: 1024px) {
+  .full-page-loader {
+    /* Custom styles for screens larger than 1024px */
+    background-color: blue;
+  }
+
+  .animation-container {
+    /* Custom styles for screens larger than 1024px */
+    width: 30vw;
+    height: 40vh;
+  }
+
+  /* Add more styles for other elements if needed */
+}
+
+/* Styles for screens with a minimum width of 1440px */
+@media (min-width: 1440px) {
+  .full-page-loader {
+    /* Custom styles for screens larger than 1440px */
+    background-color: green;
+  }
+
+  .animation-container {
+    /* Custom styles for screens larger than 1440px */
+    width: 25vw;
+    height: 25vh;
+  }
+
+  /* Add more styles for other elements if needed */
 }

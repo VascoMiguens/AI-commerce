@@ -60,7 +60,7 @@ function App() {
       <Elements stripe={stripePromise}>
         <CartProvider>
           <Router>
-            <Layout>
+            <Layout isLogged={isLogged}>
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route

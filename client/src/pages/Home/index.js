@@ -126,7 +126,11 @@ const Home = () => {
           <div className="home-container row row-cols-1 my-5 row-cols-sm-1 row-cols-md-1 row-cols-lg-2 w-90 border m-2 p-5">
             <h1 className="title">Create Your Own Artwork!</h1>
             <div className="art">
-              <div className={isLoggedIn ? "left-section" : "logged-out"}>
+              <div
+                className={
+                  isLoggedIn && imageUrl ? "left-section" : "logged-out"
+                }
+              >
                 <div className="search-section">
                   <input
                     className="inputSearch"
@@ -160,7 +164,7 @@ const Home = () => {
                   </div>
                 )}
               </div>
-              {imageUrl && auth.loggedIn() && (
+              {imageUrl && isLoggedIn && (
                 <div className="right-section">
                   <h2 className="right-h">Your Recent Artwork!</h2>
                   <div className="recent-img">

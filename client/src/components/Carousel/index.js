@@ -6,7 +6,6 @@ import "swiper/swiper-bundle.min.css";
 import { Navigation, Pagination, A11y, EffectFade } from "swiper";
 import "./carousel.css";
 import { Link } from "react-router-dom";
-import { FaCartPlus, FaHeart, FaRegHeart } from "react-icons/fa";
 
 function Carousel() {
   const { data } = useQuery(ALL_PRODUCTS);
